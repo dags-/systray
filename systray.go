@@ -16,6 +16,7 @@ import (
 )
 
 var (
+	ClickedCh  = make(chan struct{})
 	hasStarted = int64(0)
 	hasQuit    = int64(0)
 )
@@ -55,6 +56,7 @@ var (
 // Should be called at the very beginning of main() to lock at main thread.
 func Run(onReady func(), onExit func()) {
 	runtime.LockOSThread()
+	atomic.StoreInt64(&hasQuit, 0)
 	atomic.StoreInt64(&hasStarted, 1)
 
 	if onReady == nil {
@@ -177,5 +179,13 @@ func systrayMenuItemSelected(id int32) {
 	case item.ClickedCh <- struct{}{}:
 	// in case no one waiting for the channel
 	default:
+	}
+}
+
+func systrayClicked() {
+	select {
+	case ClickedCh <- struct{}{}:
+	default:
+		showMenu()
 	}
 }
